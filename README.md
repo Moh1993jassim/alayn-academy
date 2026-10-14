@@ -17,13 +17,13 @@
 
 ## التشغيل لأول مرة
 
-### 1) نشر الموقع على GitHub Pages
-1. ارفع محتويات هذا المجلد إلى المستودع (Add file ← Upload files).
-2. افتح Settings ← Pages.
-3. Source: **Deploy from a branch** ← Branch: **main** ← المجلد: **/ (root)** ← Save.
-4. بعد دقيقة يظهر رابط الموقع بالشكل: `https://اسم-الحساب.github.io/alayn-academy/`.
+### 1) الموقع منشور ✔
+**الرابط:** https://moh1993jassim.github.io/alayn-academy/
 
-> المستودع يكون **Public** حتى يعمل GitHub Pages المجاني. لا يحتوي الكود على أي اسم أو رقم هاتف؛ القائمة محفوظة في الشيت فقط.
+- يعرض GitHub Pages فرع `gh-pages`، وأي تعديل تحفظه على `main` يُنشر إليه تلقائياً خلال دقيقة أو دقيقتين (ملف `.github/workflows/publish.yml`). عدّل دائماً على `main`.
+- لمتابعة النشر: تبويب **Actions** في المستودع.
+
+> المستودع **Public** حتى يعمل GitHub Pages المجاني. لا يحتوي الكود على أي اسم أو رقم هاتف؛ القائمة محفوظة في الشيت فقط.
 
 ### 2) إنشاء سجل القسم (Google Sheet)
 يُفضَّل أن يكون بحساب Google خاص بالقسم، لا بحساب شخصي.

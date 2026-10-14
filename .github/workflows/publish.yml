@@ -1,0 +1,20 @@
+# ينشر الموقع تلقائياً: أي تعديل على main يُنسخ إلى gh-pages التي يعرضها GitHub Pages
+name: نشر الموقع
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: publish
+  cancel-in-progress: true
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: نسخ main إلى gh-pages
+        run: git push origin HEAD:refs/heads/gh-pages --force
