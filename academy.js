@@ -505,7 +505,10 @@ function steps(items){ return `<ol class="steps">${items.map(t=>`<li><div>${t}</
 
 /* ================= video gate ================= */
 function ytId(u){ const s=String(u||'').trim(); const m=s.match(/(?:youtu\.be\/|v=|embed\/|shorts\/|live\/)([\w-]{11})/); return m ? m[1] : (/^[\w-]{11}$/.test(s) ? s : ''); }
-function vcfg(id){ const v = VIDS[id]; if(!v) return null; if(v.yt){ const y=ytId(v.yt); if(y) return {kind:'yt', id:y, checks:v.checks||[]}; } if(v.ig) return {kind:'ig', url:v.ig, sec:+v.sec||60}; return null; }
+const YFAIL = {};
+function vcfg(id){ const v = VIDS[id]; if(!v) return null;
+  if(v.yt){ const y=ytId(v.yt); if(y && !YFAIL[y]) return {kind:'yt', id:y, checks:v.checks||[]}; if(y) return {kind:'ig', url:'https://www.youtube.com/watch?v='+y, sec:+v.sec||120, yfail:true}; }
+  if(v.ig) return {kind:'ig', url:v.ig, sec:+v.sec||60}; return null; }
 function needVid(id){ return !!vcfg(id); }
 function vidOk(id){ return !needVid(id) || !!(S.vid[id] && S.vid[id].ok); }
 function vst(id){ return S.vid[id] = S.vid[id] || {w:'', d:0, cp:{}, ok:false}; }
@@ -523,7 +526,7 @@ function vblock(id){
   const st = S.vid[id]||{}, left = st.igAt ? Math.max(0, c.sec - Math.floor((Date.now()-st.igAt)/1000)) : c.sec;
   return `<section class="vid">${head}<div class="vid-ig"><a class="btn btn-primary" href="${esc(c.url)}" target="_blank" rel="noopener" data-act="igopen" data-v="${id}">${ic(I.play,16)} افتح مقطع الشرح</a>
     <span id="igT" class="muted">${ok?'':st.igAt?(left>0?`يُفتح التأكيد بعد ${left} ثانية`:'يمكنك التأكيد الآن'):`مدة المقطع ${c.sec} ثانية تقريباً`}</span>
-    <label class="s-check"><input type="checkbox" data-in="igok" data-v="${id}" ${ok?'checked disabled':(!st.igAt||left>0?'disabled':'')}> شاهدت المقطع كاملاً</label></div></section>`;
+    <label class="s-check"><input type="checkbox" data-in="igok" data-v="${id}" ${ok?'checked disabled':(!st.igAt||left>0?'disabled':'')}> شاهدت المقطع كاملاً</label></div>${c.yfail?'<p class="vid-rule">تعذّر تشغيل هذا الفيديو داخل الموقع (صاحب القناة منع عرضه في المواقع الأخرى أو أنه غير متاح)، لذلك يُفتح على YouTube ويُحتسب بعداد مدته.</p>':''}</section>`;
 }
 let YP = null, YTT = null, YLAST = null, YCUR = null, IGT = null;
 function ytLoad(cb){
@@ -542,7 +545,8 @@ function vidMount(id){
     if(YCUR!==id || !$('#ytp')) return;
     YP = new YT.Player('ytp', {videoId:c.id, playerVars:{rel:0, modestbranding:1, playsinline:1, hl:'ar'}, events:{
       onReady:()=>{ const d=Math.floor(YP.getDuration()||0); if(d){ st.d=d; if(st.w.length<d) st.w = st.w.padEnd(d,'0'); save(); } vidUI(id); },
-      onStateChange:e=>{ if(e.data===YT.PlayerState.PLAYING){ YLAST=YP.getCurrentTime(); clearInterval(YTT); YTT=setInterval(()=>vidTick(id),500); } else { clearInterval(YTT); if(e.data===YT.PlayerState.ENDED) vidTick(id); YLAST=null; } }
+      onStateChange:e=>{ if(e.data===YT.PlayerState.PLAYING){ YLAST=YP.getCurrentTime(); clearInterval(YTT); YTT=setInterval(()=>vidTick(id),500); } else { clearInterval(YTT); if(e.data===YT.PlayerState.ENDED) vidTick(id); YLAST=null; } },
+      onError:()=>{ YFAIL[c.id]=true; vidCleanup(); const sec=$('section.vid'); if(sec) sec.outerHTML = vblock(id); vidMount(id); }
     }});
   });
 }
