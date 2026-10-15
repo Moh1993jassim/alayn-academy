@@ -16,7 +16,7 @@ const TRACKS = [['fin', 'المالي'], ['kaf', 'الكفالة'], ['mkh', 'ا�
 const TOKEN_DAYS = 45;
 const MAX_FAILS = 8;          // محاولات دخول خاطئة قبل القفل المؤقت
 const LOCK_MINUTES = 15;
-const NAVY = '#13294B';
+const NAVY = '#0A3A46';   // لون المؤسسة الداكن
 
 /* ---------------- setup ---------------- */
 function setup() {
@@ -55,7 +55,7 @@ function buildDashboard_(ss) {
   // KPIs
   const kpi = [['في سجل المندوبين', `=COUNTA(${R}!A2:A)`], ['دخلوا المنصة', `=COUNTA(${T}!B2:B)`], ['اجتازوا المالي', `=COUNTIF(${T}!L2:L,"ناجح")`], ['اجتازوا الكفالة', `=COUNTIF(${T}!P2:P,"ناجح")`], ['اجتازوا المخازن', `=COUNTIF(${T}!T2:T,"ناجح")`], ['اجتازوا الصناديق', `=COUNTIF(${T}!X2:X,"ناجح")`], ['اجتازوا الأربعة', `=COUNTIF(${T}!Z2:Z,4)`]];
   kpi.forEach(([l, f], i) => { sh.getRange(3, i + 1).setValue(l); sh.getRange(4, i + 1).setFormula(f); });
-  sh.getRange(3, 1, 1, kpi.length).setBackground('#E2F4F5').setFontWeight('bold');
+  sh.getRange(3, 1, 1, kpi.length).setBackground('#E1F1F4').setFontWeight('bold');
   sh.getRange(4, 1, 1, kpi.length).setFontSize(18).setFontWeight('bold').setHorizontalAlignment('center');
   // by branch
   const bh = ['الفرع', 'في السجل', 'دخلوا', 'المالي', 'الكفالة', 'المخازن', 'الصناديق', 'الأربعة', 'متوسط المالي %'];
@@ -87,6 +87,7 @@ function doPost(e) {
   try {
     if (req.action === 'login') return out_(login_(req));
     if (req.action === 'events') return out_(events_(req));
+    if (req.action === 'stats') return out_(stats_());
     return out_({ ok: false, error: 'unknown_action' });
   } catch (err) { return out_({ ok: false, error: 'server', msg: String(err) }); }
 }
@@ -153,6 +154,7 @@ function events_(req) {
       else if (ev.ev === 'module') logs.push([at, who.name, who.branch, 'إتمام وحدة', (ev.title || ev.mod) + ' — ' + trackName_(ev.tr)]);
       else if (ev.ev === 'video') logs.push([at, who.name, who.branch, 'مشاهدة فيديو', ev.mod + ' — ' + (ev.pct || 0) + '%' + (ev.via ? ' (' + ev.via + ')' : '')]);
       else if (ev.ev === 'role') logs.push([at, who.name, who.branch, 'تحديد العمل', ev.role || '']);
+      else if (ev.ev === 'video_error') logs.push([at, who.name, who.branch, 'تعذّر تشغيل فيديو', ev.mod + ' — رمز ' + (ev.code || '')]);
       else if (ev.ev === 'exam') {
         attempts.push([at, who.name, who.branch, who.trainer, trackName_(ev.tr), +ev.score || 0, +ev.right || 0, +ev.total || 0, ev.pass ? 'ناجح' : 'لم يجتز', +ev.attempt || 1, ev.cert || '']);
         logs.push([at, who.name, who.branch, 'اختبار', trackName_(ev.tr) + ': ' + ev.score + '%' + (ev.pass ? ' — ناجح' : '')]);
@@ -164,7 +166,7 @@ function events_(req) {
     TRACKS.forEach(([k], i) => {
       const t = tr[k]; const c = 9 + i * 4;
       if (!t) return;
-      v[c] = t.done + ' / ' + t.total;
+      v[c] = "'" + t.done + ' / ' + t.total;   // نص، حتى لا يحوّله الشيت إلى تاريخ
       v[c + 1] = t.best == null ? '' : t.best;
       v[c + 2] = t.pass ? 'ناجح' : (t.best == null ? (t.done ? 'جارٍ' : 'لم يبدأ') : 'لم يجتز');
       v[c + 3] = t.cert || '';
@@ -177,6 +179,36 @@ function events_(req) {
     log_(ss, logs);
   } finally { lock.releaseLock(); }
   return { ok: true };
+}
+
+
+/* ---------------- public counters (aggregates only, no names or phones) ---------------- */
+function stats_() {
+  const cache = CacheService.getScriptCache(), hit = cache.get('stats');
+  if (hit) return JSON.parse(hit);
+  const ss = SpreadsheetApp.getActive(), ts = ss.getSheetByName(SH.trainees);
+  const res = { ok: true, trainees: 0, certs: 0, units: 0, branches: 0, tracks: {}, byBranch: [], at: Date.now() };
+  TRACKS.forEach(([k]) => { res.tracks[k] = { learners: 0, passed: 0 }; });
+  const n = ts.getLastRow() - 1;
+  if (n > 0) {
+    const rows = ts.getRange(2, 1, n, 9 + TRACKS.length * 4).getValues(), br = {};
+    rows.forEach(r => {
+      if (!r[1]) return;
+      res.trainees++;
+      const b = String(r[3] || '').trim();
+      if (b) { br[b] = br[b] || { b: b, n: 0, certs: 0 }; br[b].n++; }
+      TRACKS.forEach(([k], i) => {
+        const c = 9 + i * 4, done = parseInt(String(r[c]).split('/')[0], 10) || 0;
+        res.units += done;
+        if (done || r[c + 1] !== '') res.tracks[k].learners++;
+        if (r[c + 3]) { res.certs++; res.tracks[k].passed++; if (b) br[b].certs++; }
+      });
+    });
+    res.branches = Object.keys(br).length;
+    res.byBranch = Object.keys(br).map(k => br[k]).sort((a, z) => z.certs - a.certs || z.n - a.n).slice(0, 12);
+  }
+  cache.put('stats', JSON.stringify(res), 120);
+  return res;
 }
 
 /* ---------------- helpers ---------------- */

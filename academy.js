@@ -261,7 +261,35 @@ const I = {
  coin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="6" width="14" height="15" rx="2"/><path d="M9 3h6v3H9zM9 11h6"/></svg>',
  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>'
 };
-const MARK = '<svg viewBox="0 0 32 32" fill="none"><path d="M8 4h16v22l-2.7-2-2.6 2-2.7-2-2.7 2-2.6-2L8 26z" fill="#fff" fill-opacity=".95"/><path d="M12 10h8M12 14h8M12 18h5" stroke="#13294B" stroke-width="2" stroke-linecap="round"/><circle cx="23.5" cy="22.5" r="5.5" fill="#0098A6" stroke="#fff" stroke-width="1.6"/><path d="m21.2 22.6 1.6 1.6 3-3.2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const MARK = '<img src="assets/brand/emblem.svg" alt="" width="28" height="39">';
+const TIMG = {fin:'assets/brand/tr-fin.webp', kaf:'assets/brand/tr-kaf.webp', mkh:'assets/brand/tr-mkh.webp', sun:'assets/brand/tr-sun.webp'};
+const IMPACT = Object.assign({n:111173, t:'يتيماً تحتضنهم مؤسسة العين', src:'من موقع المؤسسة aynyateem.com'}, CFG.IMPACT||{});
+const fmtN = n => Math.round(+n||0).toLocaleString('en-US');
+/* count-up: runs once when the number scrolls into view; later updates animate from the shown value */
+function countUpAll(root){
+  const rm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  (root||document).querySelectorAll('.cu[data-to]').forEach(el=>{
+    if(el.dataset.run) return; el.dataset.run='1';
+    const go = ()=>{ const from=+(el.dataset.from||0), to=+el.dataset.to||0; if(rm||from===to){ el.textContent=fmtN(to); return; }
+      const t0=performance.now(), D=Math.min(2200, 900+Math.log10(Math.abs(to-from)+1)*260);
+      const step=now=>{ const k=Math.min(1,(now-t0)/D), e=1-Math.pow(1-k,3); el.textContent=fmtN(from+(to-from)*e); if(k<1) requestAnimationFrame(step); else el.dataset.from=String(to); };
+      requestAnimationFrame(step); };
+    if(!('IntersectionObserver' in window)) return go();
+    const io=new IntersectionObserver(es=>{ if(es.some(x=>x.isIntersecting)){ io.disconnect(); go(); } },{threshold:.3}); io.observe(el);
+  });
+}
+/* live platform counters from the department sheet (aggregates only) */
+let STATS = null;
+try{ const c=JSON.parse(sessionStorage.getItem('ayn-stats')||'null'); if(c && Date.now()-c.at<300000) STATS=c.s; }catch(e){}
+async function loadStats(){
+  if(!LIVE) return;
+  try{ const r = await api('stats'); if(r && r.ok){ const prev=STATS; STATS=r; try{ sessionStorage.setItem('ayn-stats', JSON.stringify({at:Date.now(), s:r})); }catch(e){}
+    document.querySelectorAll('[data-stat]').forEach(el=>{ const v=statVal(el.dataset.stat); if(v==null) return; el.dataset.from = el.dataset.run ? (el.dataset.from||el.dataset.to||0) : 0; el.dataset.to=String(v); delete el.dataset.run; });
+    if(!prev){ const k=$('#kpis'); if(k) k.innerHTML=kpiHTML(); const lg=$('#lgLive'); if(lg) lg.outerHTML=lgLive(); }
+    countUpAll(); } }catch(e){}
+}
+function statVal(k){ if(!STATS) return null; if(k.indexOf('.')>0){ const [t,f]=k.split('.'); return STATS.tracks&&STATS.tracks[t]?STATS.tracks[t][f]:null; } return STATS[k]; }
+setInterval(()=>{ if(LIVE && !document.hidden && (location.hash==='#home'||!S.user)) loadStats(); }, 60000);
 const ic = (svg, s=20) => svg.replace('<svg',`<svg width="${s}" height="${s}"`);
 
 function note(kind, title, body){
@@ -269,7 +297,7 @@ function note(kind, title, body){
   return `<div class="note ${kind}"><div class="ic">${icn}</div><div><b>${title}</b><div>${body}</div></div></div>`;
 }
 function fig(src, cap){ return `<figure class="fig"><button data-zoom="assets/${src}.webp" data-cap="${esc(cap)}" aria-label="تكبير الصورة"><img src="assets/${src}.webp" alt="${esc(cap)}" loading="lazy"></button><figcaption>${cap}</figcaption></figure>`; }
-function ring(p, size=30, stroke=4, col='#2CC0CC', bg='rgba(255,255,255,.18)'){
+function ring(p, size=30, stroke=4, col='#F2C61F', bg='rgba(255,255,255,.18)'){
   const r=(size-stroke)/2, c=2*Math.PI*r;
   const lbl = size>=60 ? `<text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" style="fill:var(--ink);font-family:var(--f-mono);font-weight:600;font-size:${size*.22}px">${Math.round(p*100)}%</text>` : '';
   return `<svg class="ring" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><circle cx="${size/2}" cy="${size/2}" r="${r}" style="stroke:${bg};fill:none" stroke-width="${stroke}"/><circle cx="${size/2}" cy="${size/2}" r="${r}" style="stroke:${col};fill:none" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c*(1-p)}" transform="rotate(-90 ${size/2} ${size/2})"/>${lbl}</svg>`;
@@ -336,9 +364,9 @@ function syncUI(){ const el=$('#syncSt'); if(el){ el.textContent = syncText(); e
 
 /* ================= login ================= */
 let LG = {step:'form', err:'', busy:false, trainers:[], name:'', phone:''};
+function lgLive(){ return STATS ? `<div class="imp2" id="lgLive"><b class="cu" data-stat="trainees" data-to="${STATS.trainees}">0</b><span>متدرباً دخلوا الأكاديمية حتى الآن</span></div>` : '<span id="lgLive" hidden></span>'; }
 function loginView(){
   const demo = !LIVE;
-  const tracks = TORDER.map(tr=>`<li><span class="tli">${ic(TRACKS[tr].ic,18)}</span>${TRACKS[tr].t}<small>${coreOf(tr).length} وحدات</small></li>`).join('');
   const form = LG.step==='trainer' ? `
     <div class="lg-card stack" style="gap:14px">
       <div><span class="eyebrow">خطوة أخيرة</span><h2>من المدرب الذي درّبك؟</h2><p class="muted">يظهر اسم مدربك في سجل القسم وعلى شهادتك.</p></div>
@@ -347,7 +375,7 @@ function loginView(){
       <button class="btn btn-primary btn-lg" data-act="lgtrainer">متابعة ${I.next}</button>
     </div>` : `
     <form class="lg-card stack" id="lgForm" style="gap:14px" novalidate>
-      <div><span class="eyebrow">تسجيل الدخول</span><h2>ادخل بحسابك التدريبي</h2><p class="muted">اسم الحساب هو اسمك الثلاثي كما هو مسجّل في المؤسسة، وكلمة المرور رقم هاتفك.</p></div>
+      <div><h2>ادخل بحسابك التدريبي</h2><p class="muted">اسم الحساب هو اسمك الثلاثي كما هو مسجّل في المؤسسة، وكلمة المرور رقم هاتفك.</p></div>
       <div class="field"><label for="lgName">اسم الحساب — اسمك الثلاثي</label><div class="lg-in">${ic(I.person,18)}<input class="input" id="lgName" autocomplete="name" placeholder="مثال: علي حسين كاظم" value="${esc(LG.name)}" required></div></div>
       <div class="field"><label for="lgPhone">كلمة المرور — رقم هاتفك</label><div class="lg-in">${ic(I.phone,18)}<input class="input" id="lgPhone" type="password" inputmode="tel" autocomplete="tel" placeholder="07xxxxxxxxx" value="${esc(LG.phone)}" required style="direction:ltr;text-align:right"><button type="button" class="lg-eye" data-act="lgeye" aria-label="إظهار الرقم">👁</button></div></div>
       ${LG.err?`<div class="lg-err" role="alert">${LG.err}</div>`:''}
@@ -355,16 +383,28 @@ function loginView(){
       ${demo?`<p class="lg-demo">${ic(I.info,16)} <span><b>نسخة عرض:</b> الدخول هنا تجريبي بأي اسم ثلاثي ورقم هاتف، والنتائج تُحفظ على هذا الجهاز فقط.</span></p>`:`<p class="muted" style="font-size:.84rem">لا تستطيع الدخول؟ تواصل مع مدربك أو مع قسم الترويج والاستحصال لتثبيت اسمك ورقمك في سجل المندوبين.</p>`}
     </form>`;
   document.getElementById('app').innerHTML = `
-  <div class="login">
-    <section class="lg-side">
-      <div class="lg-brand"><span class="mark">${MARK}</span><div><b>أكاديمية الاستحصال</b><span>مؤسسة العين للرعاية الاجتماعية · قسم الترويج والاستحصال</span></div></div>
-      <h1>أمانة الأيتام<br><em>تبدأ بتدريب صحيح</em></h1>
-      <p>البرنامج التدريبي للمستحصلين في أربعة مسارات. تشاهد الشرح، وتتدرّب على الحالات، وتجتاز اختبار كل مسار لتحصل على شهادته.</p>
-      <ul class="lg-tracks">${tracks}</ul>
-      <div class="lg-foot">لجنة تطوير المستحصلين</div>
+  <div class="lg2">
+    <section class="lg2-form">
+      <div class="lg2-in">
+        <img class="lg2-logo" src="assets/brand/logo.svg" alt="مؤسسة العين للرعاية الاجتماعية" width="260" height="88">
+        <div class="lg2-title"><h1>أكاديمية الاستحصال</h1><p>البرنامج التدريبي للمستحصلين في قسم الترويج والاستحصال</p></div>
+        ${form}
+        <ul class="lg2-tracks" aria-label="المسارات">${TORDER.map(tr=>`<li class="h-${TRACKS[tr].hue}"><span class="i">${ic(TRACKS[tr].ic,16)}</span><b>${TRACKS[tr].short}</b><small>${coreOf(tr).length} وحدات</small></li>`).join('')}</ul>
+        <p class="lg2-foot">لجنة تطوير المستحصلين</p>
+      </div>
     </section>
-    <section class="lg-main">${form}</section>
+    <section class="lg2-photo">
+      <img class="ph" src="assets/brand/girl-portrait.webp" alt="طفلة مبتسمة من أحبّاء مؤسسة العين" width="780" height="853">
+      <div class="lg2-cap">
+        <p class="goal">أن لا يبقى يتيمٌ محتاج<br>والعين موجودة</p>
+        <div class="imp"><b class="cu" data-to="${IMPACT.n}">0</b><span>${IMPACT.t}</span></div>
+        <p class="lg2-why">كل وصلٍ تقطعه بأمانة يصل إلى واحدٍ منهم.</p>
+        ${lgLive()}
+        <small class="src">${IMPACT.src}</small>
+      </div>
+    </section>
   </div>`;
+  countUpAll(); if(LIVE && !STATS) loadStats();
 }
 async function doLogin(){
   const name = ($('#lgName')?.value||'').trim().replace(/\s+/g,' '), phone = $('#lgPhone')?.value||'';
@@ -503,82 +543,128 @@ function cardList(items, cols=2){ return `<div class="grid-${cols}">${items.map(
 function bullets(items){ return `<ul class="bul">${items.map(t=>`<li>${t}</li>`).join('')}</ul>`; }
 function steps(items){ return `<ol class="steps">${items.map(t=>`<li><div>${t}</div></li>`).join('')}</ol>`; }
 
-/* ================= video gate ================= */
+/* ================= video gate =================
+   Three sources share one gate:
+   mp4 — file hosted with the site (best: plays everywhere, seeking ahead is blocked)
+   yt  — YouTube embed (counts seconds actually watched; seeks are not counted)
+   ig  — Instagram / external link (cannot be measured: opens the clip, unlocks after its duration) */
 function ytId(u){ const s=String(u||'').trim(); const m=s.match(/(?:youtu\.be\/|v=|embed\/|shorts\/|live\/)([\w-]{11})/); return m ? m[1] : (/^[\w-]{11}$/.test(s) ? s : ''); }
-const YFAIL = {};
-function vcfg(id){ const v = VIDS[id]; if(!v) return null;
-  if(v.yt){ const y=ytId(v.yt); if(y && !YFAIL[y]) return {kind:'yt', id:y, checks:v.checks||[]}; if(y) return {kind:'ig', url:'https://www.youtube.com/watch?v='+y, sec:+v.sec||120, yfail:true}; }
+function vcfg(id){ const v = VIDS[id]; if(!v) return null; const st = S.vid[id]||{};
+  if(v.mp4) return {kind:'mp4', url:v.mp4, poster:v.poster||'', checks:v.checks||[]};
+  if(v.yt){ const y=ytId(v.yt); if(y){ if(st.ext) return {kind:'ig', url:'https://www.youtube.com/watch?v='+y, sec:+v.sec||st.d||120, ext:true}; return {kind:'yt', id:y, checks:v.checks||[]}; } }
   if(v.ig) return {kind:'ig', url:v.ig, sec:+v.sec||60}; return null; }
 function needVid(id){ return !!vcfg(id); }
 function vidOk(id){ return !needVid(id) || !!(S.vid[id] && S.vid[id].ok); }
 function vst(id){ return S.vid[id] = S.vid[id] || {w:'', d:0, cp:{}, ok:false}; }
 function vpct(id){ const s=S.vid[id]; if(!s) return 0; if(s.ok) return 1; if(!s.d) return 0; let n=0; for(const ch of s.w) if(ch==='1') n++; return Math.min(1, n/s.d); }
+function vfar(id){ const s=S.vid[id]; if(!s||!s.w) return 0; const i=s.w.indexOf('0'); return i<0 ? s.w.length : i; }
+const VSTATE_OK = '✓ اكتملت المشاهدة — يمكنك إتمام الوحدة';
 function vblock(id){
   const c = vcfg(id); if(!c) return '';
   const ok = vidOk(id), p = vpct(id);
-  const head = `<div class="vid-h"><span class="vid-badge">${ic(I.play,14)} فيديو الوحدة</span><b id="vidState">${ok?'✓ اكتملت المشاهدة — يمكنك إتمام الوحدة':'شاهد الفيديو حتى النهاية لفتح إتمام الوحدة'}</b></div>`;
-  if(c.kind==='yt'){
-    if(!STANDALONE) return `<section class="vid">${head}<div class="vid-off">${ic(I.play,28)}<p>يعمل الفيديو في نسخة الموقع المنشورة على GitHub Pages. في نسخة العرض هذه يظهر مكانه فقط.</p></div></section>`;
-    return `<section class="vid">${head}<div class="vid-box"><div id="ytp"></div><div class="vid-ov" id="vidOv" hidden></div></div>
+  const head = `<div class="vid-h"><span class="vid-badge">${ic(I.play,14)} فيديو الوحدة</span><b id="vidState">${ok?VSTATE_OK:'شاهد الفيديو حتى النهاية لفتح إتمام الوحدة'}</b></div>`;
+  if(c.kind==='mp4' || c.kind==='yt'){
+    if(!STANDALONE) return `<section class="vid">${head}<div class="vid-off">${ic(I.play,28)}<p>يعمل الفيديو في نسخة الموقع المنشورة. في نسخة العرض هذه يظهر مكانه فقط.</p></div></section>`;
+    const media = c.kind==='mp4'
+      ? `<video id="vplayer" src="${esc(c.url)}" ${c.poster?`poster="${esc(c.poster)}"`:''} playsinline webkit-playsinline controls preload="metadata" controlslist="nodownload noplaybackrate" disablepictureinpicture></video>`
+      : `<div id="ytp"></div>`;
+    const rule = c.kind==='mp4'
+      ? 'تُحتسب الثواني التي تُشاهَد فعلاً، ولا يمكن تجاوز جزء لم تشاهده بعد. يتوقف العرض عند مغادرة الصفحة.'
+      : 'تُحتسب الثواني التي تُشاهَد فعلاً فقط، والتقديم السريع لا يُحتسب. يتوقف العرض عند مغادرة الصفحة.';
+    return `<section class="vid">${head}<div class="vid-box">${media}<div class="vid-ov" id="vidOv" hidden></div></div>
       <div class="vid-meter"><div class="vbar"><i id="vidBar" style="width:${p*100}%"></i><span class="need" style="inset-inline-start:${WATCH*100}%" title="المطلوب"></span></div><span id="vidPct" class="mono">${Math.round(p*100)}%</span></div>
-      <p class="vid-rule">تُحتسب الثواني التي تُشاهَد فعلاً فقط. التقديم السريع لا يُحتسب، ويتوقف العرض تلقائياً عند مغادرة الصفحة. المطلوب ${Math.round(WATCH*100)}٪${c.checks.length?` مع الإجابة عن ${c.checks.length===1?'سؤال تحقق':c.checks.length+' أسئلة تحقق'} أثناء المشاهدة`:''}.</p></section>`;
+      <p class="vid-rule">${rule} المطلوب ${Math.round(WATCH*100)}٪${c.checks.length?` مع الإجابة عن ${c.checks.length===1?'سؤال تحقق':c.checks.length+' أسئلة تحقق'} أثناء المشاهدة`:''}.</p></section>`;
   }
   const st = S.vid[id]||{}, left = st.igAt ? Math.max(0, c.sec - Math.floor((Date.now()-st.igAt)/1000)) : c.sec;
-  return `<section class="vid">${head}<div class="vid-ig"><a class="btn btn-primary" href="${esc(c.url)}" target="_blank" rel="noopener" data-act="igopen" data-v="${id}">${ic(I.play,16)} افتح مقطع الشرح</a>
+  return `<section class="vid">${head}<div class="vid-ig"><a class="btn btn-primary" href="${esc(c.url)}" target="_blank" rel="noopener" data-act="igopen" data-v="${id}">${ic(I.play,16)} ${c.ext?'شاهد على YouTube':'افتح مقطع الشرح'}</a>
     <span id="igT" class="muted">${ok?'':st.igAt?(left>0?`يُفتح التأكيد بعد ${left} ثانية`:'يمكنك التأكيد الآن'):`مدة المقطع ${c.sec} ثانية تقريباً`}</span>
-    <label class="s-check"><input type="checkbox" data-in="igok" data-v="${id}" ${ok?'checked disabled':(!st.igAt||left>0?'disabled':'')}> شاهدت المقطع كاملاً</label></div>${c.yfail?'<p class="vid-rule">تعذّر تشغيل هذا الفيديو داخل الموقع (صاحب القناة منع عرضه في المواقع الأخرى أو أنه غير متاح)، لذلك يُفتح على YouTube ويُحتسب بعداد مدته.</p>':''}</section>`;
+    <label class="s-check"><input type="checkbox" data-in="igok" data-v="${id}" ${ok?'checked disabled':(!st.igAt||left>0?'disabled':'')}> شاهدت المقطع كاملاً</label></div>${c.ext?`<p class="vid-rule">يُشاهَد هذا المقطع على YouTube لأن تشغيله تعذّر داخل الموقع. <button class="linkbtn" data-act="vinline" data-v="${id}">أعد المحاولة داخل الموقع</button></p>`:''}</section>`;
 }
-let YP = null, YTT = null, YLAST = null, YCUR = null, IGT = null;
+/* one adapter for both players: PL = {time, dur, play, pause, seek, destroy} */
+let PL = null, PRAW = null, PT = null, PLAST = null, PCUR = null, IGT = null;
 function ytLoad(cb){
   if(window.YT && YT.Player) return cb();
   (window.__ytq = window.__ytq || []).push(cb);
-  if(!document.getElementById('yt-api')){ const s=document.createElement('script'); s.id='yt-api'; s.src='https://www.youtube.com/iframe_api'; document.head.appendChild(s);
+  if(!document.getElementById('yt-api')){ const s=document.createElement('script'); s.id='yt-api'; s.src='https://www.youtube.com/iframe_api';
+    s.onerror=()=>{ const q=window.__ytq||[]; window.__ytq=[]; q.forEach(f=>f(new Error('api'))); }; document.head.appendChild(s);
     window.onYouTubeIframeAPIReady = ()=>{ const q=window.__ytq||[]; window.__ytq=[]; q.forEach(f=>f()); }; }
 }
-function vidCleanup(){ clearInterval(YTT); clearInterval(IGT); YLAST=null; if(YP && YP.destroy){ try{ YP.destroy(); }catch(e){} } YP=null; YCUR=null; }
+function vidCleanup(){ clearInterval(PT); clearInterval(IGT); PLAST=null; if(PL && PL.destroy){ try{ PL.destroy(); }catch(e){} } else if(PRAW && PRAW.destroy){ try{ PRAW.destroy(); }catch(e){} } PL=null; PRAW=null; PCUR=null; }
+function vsetDur(id){ const st=vst(id), d=Math.floor((PL&&PL.dur())||0); if(d && st.d!==d){ st.d=d; if(st.w.length<d) st.w=st.w.padEnd(d,'0'); else st.w=st.w.slice(0,d); save(); } }
+function vplaying(id){ PLAST=PL.time(); clearInterval(PT); PT=setInterval(()=>vidTick(id),500); }
+function vstopped(id, ended){ clearInterval(PT); if(PLAST!=null || ended) vidTick(id); PLAST=null; }
 function vidMount(id){
   const c = vcfg(id); if(!c) return;
   if(c.kind==='ig'){ igTick(id); IGT=setInterval(()=>igTick(id),1000); return; }
-  if(!STANDALONE || !$('#ytp')) return;
-  const st = vst(id); YCUR = id;
-  ytLoad(()=>{
-    if(YCUR!==id || !$('#ytp')) return;
-    YP = new YT.Player('ytp', {videoId:c.id, playerVars:{rel:0, modestbranding:1, playsinline:1, hl:'ar'}, events:{
-      onReady:()=>{ const d=Math.floor(YP.getDuration()||0); if(d){ st.d=d; if(st.w.length<d) st.w = st.w.padEnd(d,'0'); save(); } vidUI(id); },
-      onStateChange:e=>{ if(e.data===YT.PlayerState.PLAYING){ YLAST=YP.getCurrentTime(); clearInterval(YTT); YTT=setInterval(()=>vidTick(id),500); } else { clearInterval(YTT); if(e.data===YT.PlayerState.ENDED) vidTick(id); YLAST=null; } },
-      onError:()=>{ YFAIL[c.id]=true; vidCleanup(); const sec=$('section.vid'); if(sec) sec.outerHTML = vblock(id); vidMount(id); }
+  if(!STANDALONE) return;
+  PCUR = id; vst(id);
+  if(c.kind==='mp4'){
+    const v = $('#vplayer'); if(!v) return;
+    PL = {time:()=>v.currentTime||0, dur:()=>isFinite(v.duration)?v.duration:0, play:()=>{ const pr=v.play(); if(pr&&pr.catch) pr.catch(()=>{}); }, pause:()=>v.pause(), seek:t=>{ v.currentTime=t; }, destroy:()=>{ try{ v.pause(); v.removeAttribute('src'); v.load(); }catch(e){} }};
+    v.addEventListener('loadedmetadata', ()=>{ vsetDur(id); vidUI(id); });
+    v.addEventListener('playing', ()=>vplaying(id));
+    v.addEventListener('pause', ()=>vstopped(id));
+    v.addEventListener('ended', ()=>vstopped(id, true));
+    v.addEventListener('seeking', ()=>{ const far=vfar(id); if(!S.vid[id].ok && v.currentTime > far+1.5){ v.currentTime = far; toast('لا يمكن تجاوز جزء لم تشاهده بعد'); } PLAST=null; });
+    v.addEventListener('seeked', ()=>{ if(!v.paused) PLAST=v.currentTime; });
+    v.addEventListener('ratechange', ()=>{ if(v.playbackRate>1.5) v.playbackRate=1.5; });
+    v.addEventListener('error', ()=>vidError(id, 'file'));
+    if(v.readyState>=1){ vsetDur(id); vidUI(id); }
+    return;
+  }
+  if(!$('#ytp')) return;
+  ytLoad(err=>{
+    if(PCUR!==id || !$('#ytp')) return;
+    if(err) return vidError(id, 'api');
+    PRAW = new YT.Player('ytp', {videoId:c.id, playerVars:{rel:0, playsinline:1, hl:'ar', origin:location.origin}, events:{
+      onReady:()=>{ const y=PRAW; PL = {time:()=>y.getCurrentTime()||0, dur:()=>y.getDuration()||0, play:()=>y.playVideo(), pause:()=>y.pauseVideo(), seek:t=>y.seekTo(t,true), destroy:()=>y.destroy()}; vsetDur(id); vidUI(id); },
+      onStateChange:e=>{ if(!PL) return; if(e.data===YT.PlayerState.PLAYING){ vsetDur(id); vplaying(id); } else vstopped(id, e.data===YT.PlayerState.ENDED); },
+      onError:e=>vidError(id, e && e.data)
     }});
   });
 }
+const VERR = {2:'رابط الفيديو غير صحيح.', 5:'المتصفح لم يستطع تشغيل هذا النوع من الفيديو.', 100:'الفيديو محذوف أو خاص.', 101:'صاحب الفيديو لا يسمح بعرضه داخل المواقع الأخرى، أو أن YouTube طلب تسجيل الدخول.', 150:'صاحب الفيديو لا يسمح بعرضه داخل المواقع الأخرى، أو أن YouTube طلب تسجيل الدخول.', 153:'YouTube رفض طلب المشغّل من هذا المتصفح.', api:'تعذّر الاتصال بـ YouTube من هذه الشبكة.', file:'تعذّر تحميل ملف الفيديو. تحقق من الاتصال ثم أعد المحاولة.'};
+function vidError(id, code){
+  const ov = $('#vidOv'); if(!ov || PCUR!==id) return;
+  clearInterval(PT); PLAST=null;
+  const c = vcfg(id), yt = c && c.kind==='yt';
+  ov.hidden = false;
+  ov.innerHTML = `<div class="vq verr"><b>تعذّر تشغيل الفيديو هنا</b><p>${VERR[code]||'خطأ غير معروف.'} <span class="mono">(${code})</span></p><div class="row">
+    <button class="btn btn-primary" data-act="vretry" data-v="${id}">إعادة المحاولة</button>
+    ${yt?`<a class="btn btn-ghost" href="https://www.youtube.com/watch?v=${c.id}" target="_blank" rel="noopener" data-act="vext" data-v="${id}">شاهده على YouTube</a>`:''}</div></div>`;
+  send('video_error', {mod:id, code:String(code)});
+}
+function vremount(id){ vidCleanup(); const sec=$('section.vid'); if(sec) sec.outerHTML = vblock(id); vidMount(id); }
 function vidTick(id){
-  if(!YP || !YP.getCurrentTime) return;
-  const st = vst(id), c = vcfg(id), t = YP.getCurrentTime();
-  if(!st.d){ const d=Math.floor(YP.getDuration()||0); if(d){ st.d=d; st.w=st.w.padEnd(d,'0'); } }
-  if(YLAST!=null && t>=YLAST && t-YLAST<=1.25 && st.d){
-    const a=Math.floor(YLAST), b=Math.min(st.d-1, Math.floor(t)); let w=st.w.split(''); for(let k=a;k<=b;k++) w[k]='1'; st.w=w.join('');
+  if(!PL || PCUR!==id) return;
+  const st = vst(id), c = vcfg(id), t = PL.time();
+  if(!st.d) vsetDur(id);
+  if(PLAST!=null && t>=PLAST && t-PLAST<=1.25 && st.d){
+    const a=Math.floor(PLAST), b=Math.min(st.d-1, Math.floor(t)); let w=st.w.split(''); for(let k=a;k<=b;k++) w[k]='1'; st.w=w.join('');
   }
-  YLAST = t;
+  PLAST = t;
   const ci = (c.checks||[]).findIndex((q,i)=>!st.cp[i] && t>=q.at);
-  if(ci>-1){ YP.pauseVideo(); showCheck(id, ci); }
+  if(ci>-1){ PL.pause(); showCheck(id, ci); }
   vidUI(id); save();
 }
 function vidUI(id){
   const st = vst(id), c = vcfg(id), p = vpct(id);
   const b=$('#vidBar'); if(b) b.style.width=(p*100)+'%'; const t=$('#vidPct'); if(t) t.textContent=Math.round(p*100)+'%';
   const allCp = (c.checks||[]).every((_,i)=>st.cp[i]);
-  if(!st.ok && p>=WATCH && allCp){ st.ok = true; save(); send('video', {mod:id, tr:MOD[id].tr, pct:Math.round(p*100)}); toast('اكتملت مشاهدة الفيديو — يمكنك إتمام الوحدة'); const s=$('#vidState'); if(s) s.textContent='✓ اكتملت المشاهدة — يمكنك إتمام الوحدة'; refreshFoot(id); }
+  if(!st.ok && p>=WATCH && allCp){ st.ok = true; save(); send('video', {mod:id, tr:MOD[id].tr, pct:Math.round(p*100)}); toast('اكتملت مشاهدة الفيديو — يمكنك إتمام الوحدة'); const s=$('#vidState'); if(s) s.textContent=VSTATE_OK; refreshFoot(id); }
 }
 function showCheck(id, i){
   const q = vcfg(id).checks[i], ov = $('#vidOv'); if(!ov) return;
-  ov.hidden = false;
-  ov.innerHTML = `<div class="vq"><span class="eyebrow" style="color:#9FE6EC">سؤال تحقق</span><p>${q.q}</p><div class="opts">${q.o.map((o,oi)=>`<button class="opt" data-act="vq" data-v="${id}" data-i="${i}" data-o="${oi}"><span class="k">${'أبجدهـ'[oi]}</span><span>${o}</span></button>`).join('')}</div><div class="vq-msg" id="vqMsg"></div></div>`;
+  if(!ov.hidden && ov.dataset.q===String(i)) return;
+  ov.hidden = false; ov.dataset.q = String(i);
+  ov.innerHTML = `<div class="vq"><span class="eyebrow">سؤال تحقق</span><p>${q.q}</p><div class="opts">${q.o.map((o,oi)=>`<button class="opt" data-act="vq" data-v="${id}" data-i="${i}" data-o="${oi}"><span class="k">${'أبجدهـ'[oi]}</span><span>${o}</span></button>`).join('')}</div><div class="vq-msg" id="vqMsg"></div></div>`;
 }
 function igTick(id){
   const c=vcfg(id), st=S.vid[id]; const t=$('#igT'), cb=$('[data-in="igok"]'); if(!t||!st||!st.igAt||st.ok) return;
   const left = Math.max(0, c.sec - Math.floor((Date.now()-st.igAt)/1000));
   t.textContent = left>0 ? `يُفتح التأكيد بعد ${left} ثانية` : 'يمكنك التأكيد الآن'; if(cb) cb.disabled = left>0;
 }
-document.addEventListener('visibilitychange', ()=>{ if(document.hidden && YP && YP.pauseVideo){ try{ YP.pauseVideo(); }catch(e){} } });
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden && PL){ try{ PL.pause(); }catch(e){} } });
 
 /* ================= hub, track page, profile ================= */
 function trackStatus(tr){
@@ -588,38 +674,59 @@ function trackStatus(tr){
   if(p>0) return ['go',`جارٍ · ${Math.round(p*100)}٪`];
   return ['new','لم يبدأ'];
 }
+const STAR = '<svg class="hub-star" viewBox="0 0 200 200" aria-hidden="true"><path d="M100 0 112 70 170 30 130 88 200 100 130 112 170 170 112 130 100 200 88 130 30 170 70 112 0 100 70 88 30 30 88 70Z"/></svg>';
+function kpiHTML(){
+  const live = !!STATS, totalU = TORDER.reduce((a,tr)=>a+TRACKS[tr].mods.length,0), totalQ = TORDER.reduce((a,tr)=>a+TRACKS[tr].bank.length,0), totalM = TORDER.reduce((a,tr)=>a+tmin(tr),0);
+  const K = live
+    ? [['trainees',STATS.trainees,'متدرباً على المنصة'],['certs',STATS.certs,'شهادة صدرت'],['units',STATS.units,'وحدة أنجزها المتدربون'],['branches',STATS.branches,'فرعاً يتدرّب']]
+    : [['',TORDER.length,'مسارات تدريبية'],['',totalU,'وحدة تفاعلية'],['',totalQ,'سؤالاً في بنوك الاختبارات'],['',totalM,'دقيقة من المحتوى']];
+  return K.map(([k,v,l])=>`<div class="kpi"><b class="cu" ${k?`data-stat="${k}"`:''} data-to="${v}">0</b><span>${l}</span></div>`).join('') + (live?'<p class="kpi-note"><span class="dot"></span>أرقام حيّة من سجل القسم، تتحدث كل دقيقة</p>':'');
+}
+function branchBoard(){
+  if(!STATS || !STATS.byBranch || !STATS.byBranch.length) return '';
+  const max = Math.max(1, ...STATS.byBranch.map(x=>x.n));
+  return `<section class="sec"><h2>الفروع في الأكاديمية</h2><p class="muted">ترتيب الفروع حسب الشهادات الصادرة، ثم عدد المتدربين.</p>
+   <ol class="board">${STATS.byBranch.map((x,i)=>`<li><span class="r">${i+1}</span><b>${esc(x.b)}</b><span class="bar"><i style="width:${x.n/max*100}%"></i></span><span class="v"><b>${fmtN(x.certs)}</b> شهادة · ${fmtN(x.n)} متدرباً</span></li>`).join('')}</ol></section>`;
+}
 V.home = () => {
   const u = S.user, all = TORDER.length, nPass = TORDER.filter(passed).length;
   const overall = TORDER.reduce((a,tr)=>a+tpct(tr),0)/all;
   const nextTr = TORDER.find(tr=>!passed(tr)) || TORDER[0];
   const nextMod = coreOf(nextTr).find(m=>!S.done[m.id]);
+  const first = (u.name||'').trim().split(/\s+/)[0];
   return `<div class="stack">
-  <section class="hero hub">
-    <div style="position:relative;z-index:1">
-      <span class="eyebrow" style="color:#9FE6EC">أهلاً بك في أكاديمية الاستحصال</span>
-      <h1 style="margin-top:8px">${esc(u.name)}</h1>
-      <div class="who">${u.branch?`<span>الفرع: <b>${esc(u.branch)}</b></span>`:''}${u.office?`<span>المكتب: <b>${esc(u.office)}</b></span>`:''}${u.trainer?`<span>المدرب: <b>${esc(u.trainer)}</b></span>`:''}${u.demo?'<span>نسخة عرض</span>':''}</div>
-      <p class="lead">أربعة مسارات تغطي عمل المستحصل كاملاً. أنهِ وحدات المسار، ثم اجتز اختباره بنسبة ${PASS}٪ لتحصل على شهادته${LIVE&&!u.demo?'، وتصل نتيجتك إلى قسم الترويج والاستحصال مباشرة':''}.</p>
-      <div class="cta"><a class="btn btn-primary" href="#${nextMod?nextMod.id:'exam-'+nextTr}">${overall>0?'تابع من حيث توقفت':'ابدأ التدريب'} ${I.next}</a><a class="btn btn-ghost" href="#me">ملفي وسجلّي</a></div>
+  <section class="hero hub2">${STAR}
+    <div class="hub2-t">
+      <p class="hello">أهلاً ${esc(first)}، هذه مساحتك التدريبية</p>
+      <h1>${esc(u.name)}</h1>
+      <div class="who">${u.branch?`<span>الفرع <b>${esc(u.branch)}</b></span>`:''}${u.office?`<span>المكتب <b>${esc(u.office)}</b></span>`:''}${u.trainer?`<span>المدرب <b>${esc(u.trainer)}</b></span>`:''}${u.demo?'<span>نسخة عرض</span>':''}</div>
+      <div class="cta"><a class="btn btn-sun" href="#${nextMod?nextMod.id:'exam-'+nextTr}">${overall>0?'تابع من حيث توقفت':'ابدأ التدريب'} ${I.next}</a><a class="btn btn-onDark" href="#me">ملفي وسجلّي</a></div>
     </div>
-    <div class="hub-meter">${ring(overall,132,12,'#2CC0CC','rgba(255,255,255,.14)').replace('style="fill:var(--ink)','style="fill:#fff')}<div><b>${nPass} من ${all}</b><span>مسارات مجتازة</span></div></div>
+    <div class="hub-meter">${ring(overall,132,12,'#F2C61F','rgba(255,255,255,.14)').replace('style="fill:var(--ink)','style="fill:#fff')}<div><b>${nPass} من ${all}</b><span>مسارات مجتازة</span></div></div>
   </section>
+  <section class="kpis" id="kpis">${kpiHTML()}</section>
   <section class="sec"><h2>مساراتي</h2>
-   <div class="tracks">${TORDER.map((tr,i)=>{ const T=TRACKS[tr], [k,l]=trackStatus(tr), p=tpct(tr); return `<a class="trk trk-${T.hue}" href="#t-${tr}"><span class="trk-n">${pad2(i+1)}</span><span class="trk-ic">${ic(T.ic,26)}</span><b>${T.t}</b><small>${T.s}</small><span class="trk-bar"><i style="width:${p*100}%"></i></span><span class="trk-f"><span class="st st-${k}">${l}</span><span class="muted">${coreOf(tr).length} وحدات · ${tmin(tr)} د</span></span></a>`; }).join('')}</div></section>
+   <div class="tracks2">${TORDER.map(tr=>{ const T=TRACKS[tr], [k,l]=trackStatus(tr), p=tpct(tr), ln=statVal(tr+'.learners'); return `<a class="trk2 h-${T.hue}" href="#t-${tr}">
+     <span class="ph"><img src="${TIMG[tr]}" alt="" loading="lazy" width="720" height="405"><span class="ic">${ic(T.ic,22)}</span></span>
+     <span class="bd"><span class="tg"><span class="st st-${k}">${l}</span>${ln!=null?`<span class="ln"><b class="cu" data-stat="${tr}.learners" data-to="${ln}">0</b> متدرباً</span>`:''}</span>
+      <b class="tt">${T.t}</b><small>${T.s}</small>
+      <span class="trk-bar"><i style="width:${p*100}%"></i></span>
+      <span class="ft"><span>${coreOf(tr).length} وحدات</span><span>${tmin(tr)} دقيقة</span><span>${Math.min(T.n,T.bank.length)} سؤالاً</span></span></span></a>`; }).join('')}</div></section>
+  ${branchBoard()}
   <section class="sec"><h2>كيف تتعلّم هنا</h2>
-   <div class="method">
-    <div><b>١ · شاهد</b><span>لكل وحدة فيديو شرح. إتمام الوحدة يُفتح بعد المشاهدة الفعلية.</span></div>
-    <div><b>٢ · تدرّب</b><span>محاكاة الأجهزة والنماذج والحالات قبل العمل الحقيقي.</span></div>
-    <div><b>٣ · تحقّق</b><span>أسئلة سريعة في نهاية كل وحدة مع التعليل.</span></div>
-    <div><b>٤ · اجتز</b><span>اختبار لكل مسار بنسبة ${PASS}٪ وشهادة باسمك.</span></div>
-   </div></section>
+   <ol class="method2">
+    <li><b>شاهد</b><span>لكل وحدة فيديو شرح. إتمام الوحدة يُفتح بعد المشاهدة الفعلية.</span></li>
+    <li><b>تدرّب</b><span>محاكاة الأجهزة والنماذج والحالات قبل العمل الحقيقي.</span></li>
+    <li><b>تحقّق</b><span>أسئلة سريعة في نهاية كل وحدة مع التعليل.</span></li>
+    <li><b>اجتز</b><span>اختبار لكل مسار بنسبة ${PASS}٪ وشهادة باسمك.</span></li>
+   </ol></section>
   <section class="golden"><div class="seal">أمانة<br>الأيتام</div><div><q>هذه الأموال ليست ملكاً للمستحصل، وإنما ملك الأيتام</q><small>استخدامها أو تصريفها مخالفة شرعية إضافة إلى المخالفة الإدارية — الدليل المالي، أمانة الأموال</small></div></section>
   </div>`;
 };
 function trackView(tr){
   const T = TRACKS[tr], p = tpct(tr), ready = p>=1, [k,l]=trackStatus(tr);
   return `<div class="stack">
-  <header class="mod-head trk-head"><div class="serial">المسار <i>${pad2(TORDER.indexOf(tr)+1)} / ${pad2(TORDER.length)}</i></div><h1>${T.t}</h1><p>${T.lead}</p><div class="meta"><span>${coreOf(tr).length} وحدات</span><span>${tmin(tr)} دقيقة</span><span>اختبار ${Math.min(T.n,T.bank.length)} سؤالاً</span><span class="st st-${k}">${l}</span></div><div class="perf"></div></header>
+  <header class="mod-head trk-head" style="--ph:url(${TIMG[tr]})"><div class="serial">المسار <i>${pad2(TORDER.indexOf(tr)+1)} / ${pad2(TORDER.length)}</i></div><h1>${T.t}</h1><p>${T.lead}</p><div class="meta"><span>${coreOf(tr).length} وحدات</span><span>${tmin(tr)} دقيقة</span><span>اختبار ${Math.min(T.n,T.bank.length)} سؤالاً</span><span class="st st-${k}">${l}</span></div><div class="perf"></div></header>
   <section class="sec"><h2>وحدات المسار</h2>
     <div class="path">${T.mods.map((m,i)=>`<a href="#${m.id}" class="${S.done[m.id]?'done':''}"><span class="pn">${S.done[m.id]?'✓':pad2(i+1)}</span><span><b>${m.t}</b><small>${m.s} · ${m.min} د${needVid(m.id)?' · فيديو':''}${m.opt?' · ملحق':''}</small></span></a>`).join('')}
     <a href="#exam-${tr}" class="${passed(tr)?'done':''}"><span class="pn">${ready||passed(tr)?'✎':ic(I.lock,16)}</span><span><b>اختبار المسار والشهادة</b><small>${ready?'مفتوح الآن':'يُفتح بعد إتمام الوحدات الأساسية'} · النجاح ${PASS}٪</small></span></a></div></section>
@@ -715,6 +822,7 @@ function openSearch(){
 /* ================= router & events ================= */
 function route(){
   if(!S.user || LG.step==='trainer'){ loginView(); return; }
+  setTimeout(()=>{ countUpAll($('#main')); if(LIVE && (location.hash||'#home')==='#home' && !STATS) loadStats(); }, 0);
   if(!$('#main')) shell();
   vidCleanup();
   const id = (location.hash||'#home').slice(1);
@@ -750,9 +858,12 @@ Object.assign(ACT, {
   wzreset:(a)=>{ WZS[a.dataset.k]=['start']; wzRender(a.dataset.k); },
   cp:(a)=>{ const el=document.getElementById(a.dataset.src); const txt=el.textContent; const ok=()=>{ const o=a.innerHTML; a.innerHTML=ic(I.check,16)+' نُسخ'; setTimeout(()=>a.innerHTML=o,1500); }; const sel=()=>{ const r=document.createRange(); r.selectNodeContents(el); const s=getSelection(); s.removeAllRanges(); s.addRange(r); toast('حدّد النص وانسخه'); }; try{ navigator.clipboard.writeText(txt).then(ok,sel); }catch(e){ sel(); } },
   igopen:(a,v)=>{ const st=vst(v); if(!st.igAt){ st.igAt=Date.now(); save(); } setTimeout(()=>igTick(v),200); },
-  vq:(a,v)=>{ const i=+a.dataset.i, q=vcfg(v).checks[i], st=vst(v), ok=+a.dataset.o===q.a, msg=$('#vqMsg');
-    if(ok){ st.cp[i]=1; save(); $('#vidOv').hidden=true; YP&&YP.playVideo(); vidUI(v); }
-    else { msg.textContent='إجابة غير صحيحة. سنعيد المقطع قليلاً — انتبه للشرح.'; setTimeout(()=>{ $('#vidOv').hidden=true; if(YP){ YP.seekTo(Math.max(0,q.at-30),true); YLAST=null; YP.playVideo(); } },1600); } },
+  vq:(a,v)=>{ const i=+a.dataset.i, q=vcfg(v).checks[i], st=vst(v), ok=+a.dataset.o===q.a, msg=$('#vqMsg'), ov=$('#vidOv');
+    if(ok){ st.cp[i]=1; save(); ov.hidden=true; ov.dataset.q=''; if(PL) PL.play(); vidUI(v); }
+    else { msg.textContent='إجابة غير صحيحة. سنعيد المقطع قليلاً — انتبه للشرح.'; setTimeout(()=>{ ov.hidden=true; ov.dataset.q=''; if(PL){ PL.seek(Math.max(0,q.at-30)); PLAST=null; PL.play(); } },1600); } },
+  vretry:(a,v)=>vremount(v),
+  vext:(a,v)=>{ const st=vst(v); st.ext=1; st.igAt=Date.now(); save(); setTimeout(()=>vremount(v),50); },
+  vinline:(a,v)=>{ const st=vst(v); delete st.ext; delete st.igAt; save(); vremount(v); },
   exstart:(a,v)=>{ examStart(v); examRender(v); },
   exans:(a,v)=>{ EXS[v].ans[EXS[v].i]=+a.dataset.o; examRender(v); },
   exprev:(a,v)=>{ const E=EXS[v]; E.i=Math.max(0,E.i-1); examRender(v); },
