@@ -34,37 +34,37 @@ window.ACADEMY_CONFIG = {
     /* ── المسار المالي ── */
     m1:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg', checks: [ { at: 41, q: 'ما الذي يسبق قطع الوصل مباشرة؟', o: ['عدّ المبلغ والتأكد من نوع العملة','تنزيل تطبيق العين للمحسن','تسليم الدفتر إلى الفرع'], a: 0 } ] },  // استقبال المحسن واستلام التبرع (فيديو مرفوع مع الموقع)
     m2:  { ig: 'https://www.instagram.com/reel/DNsmfnr2FtR/', sec: 60 },   // جهاز المحصل الإلكتروني  (نموذج Instagram)
-    m3:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // تبويب الأموال
-    m4:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // الحقوق الشرعية
-    m5:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // الوصل الورقي
-    m6:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // إبطال الوصولات وتعديلها
-    m7:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // الدفاتر والمطبوعات
-    m8:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // أمانة الأموال والتصفية
-    m9:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // الأخطاء الشائعة
-    m10: { yt: 'https://youtu.be/wzk2VsvRjGU' },   // سند القبض العام في Oracle (ملحق)
+    m3:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // تبويب الأموال
+    m4:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // الحقوق الشرعية
+    m5:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // الوصل الورقي
+    m6:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // إبطال الوصولات وتعديلها
+    m7:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // الدفاتر والمطبوعات
+    m8:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // أمانة الأموال والتصفية
+    m9:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // الأخطاء الشائعة
+    m10: { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // سند القبض العام في Oracle (ملحق)
 
     /* ── مسار الكفالة ── */
-    k1:  { yt: 'https://youtu.be/wzk2VsvRjGU', checks: [ { at: 20, q: 'سؤال تحقق (تجريبي): لصالح أي جهة تتدرب الآن؟', o: ['مؤسسة العين للرعاية الاجتماعية','جهة حكومية','شركة خاصة'], a: 0 } ] },  // الترويج للكفالة واستقبال الكفيل
-    k2:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // ملء طلب التكفل
-    k3:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // متابعة الكفيل والمتغيرات
-    k4:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // بلوغ اليتيم والزيارات
-    k5:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // الحقوق الشرعية وملاحظات مهمة
-    k6:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // تطبيق العين ورسائل الكفلاء
-    k7:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // وصولات الكفلاء في جهاز المحصل
-    k8:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // طلبات الخدمة للكفالة
-    k9:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // أبرز المشاكل والمعوقات
+    k1:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },  // الترويج للكفالة واستقبال الكفيل
+    k2:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // ملء طلب التكفل
+    k3:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // متابعة الكفيل والمتغيرات
+    k4:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // بلوغ اليتيم والزيارات
+    k5:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // الحقوق الشرعية وملاحظات مهمة
+    k6:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // تطبيق العين ورسائل الكفلاء
+    k7:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // وصولات الكفلاء في جهاز المحصل
+    k8:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // طلبات الخدمة للكفالة
+    k9:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // أبرز المشاكل والمعوقات
 
     /* ── مسار المخازن ── */
-    s1:  { yt: 'https://youtu.be/wzk2VsvRjGU', checks: [ { at: 20, q: 'سؤال تحقق (تجريبي): لصالح أي جهة تتدرب الآن؟', o: ['مؤسسة العين للرعاية الاجتماعية','جهة حكومية','شركة خاصة'], a: 0 } ] },  // أنواع المواد العينية ودليلها
-    s2:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // آلية الاستلام والمحذورات
+    s1:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },  // أنواع المواد العينية ودليلها
+    s2:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // آلية الاستلام والمحذورات
 
     /* ── مسار صناديق الصدقات ── */
-    b1:  { yt: 'https://youtu.be/wzk2VsvRjGU', checks: [ { at: 20, q: 'سؤال تحقق (تجريبي): لصالح أي جهة تتدرب الآن؟', o: ['مؤسسة العين للرعاية الاجتماعية','جهة حكومية','شركة خاصة'], a: 0 } ] },  // صناديق الصدقات ومراحل الصندوق
-    b2:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // أنواع العهدة والرموز
-    b3:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // استلام العهدة من الفرع
-    b4:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // توزيع الصناديق على المتصدقين
-    b5:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // سحب الصناديق الممتلئة
-    b6:  { yt: 'https://youtu.be/wzk2VsvRjGU' },   // تصفية الصناديق الممتلئة
-    b7:  { yt: 'https://youtu.be/wzk2VsvRjGU' }    // الأخطاء وطلبات الخدمة والفقدان
+    b1:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },  // صناديق الصدقات ومراحل الصندوق
+    b2:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // أنواع العهدة والرموز
+    b3:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // استلام العهدة من الفرع
+    b4:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // توزيع الصناديق على المتصدقين
+    b5:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // سحب الصناديق الممتلئة
+    b6:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' },   // تصفية الصناديق الممتلئة
+    b7:  { mp4: 'assets/videos/m1-trial.mp4', poster: 'assets/videos/m1-trial.jpg' }    // الأخطاء وطلبات الخدمة والفقدان
   }
 };
